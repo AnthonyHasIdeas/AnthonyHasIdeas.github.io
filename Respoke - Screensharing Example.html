@@ -35,9 +35,6 @@
     <video id="localVideoElement"></video>
     <video id="remoteVideoElement"></video>
 
-
-    
-
     <script type="text/javascript">
     $(function() {
 
@@ -91,7 +88,25 @@
         });
 
         // Check if the user has the Chrome Screen Sharing Extension installed
-        $("#doStartScreenShare").click(startScreenShare);
+        $("#doStartScreenShare").click(function() {
+            if (respoke.needsChromeExtension && !respoke.hasChromeExtension) {
+                // Install the extension then start screen sharing
+                chrome.webstore.install(
+                    "https://chrome.google.com/webstore/detail/lefkijobnhaffcfhfgpkpkpfgcdcfjbc",
+                    onExtensionInstallSuccess, 
+                    onExtensionInstallFailure
+                );
+            }
+            else
+            {
+                // Extension is already installed, start screen sharing
+                startScreenShare();
+            }
+        });
+
+        function onExtensionInstallSuccess(evt) {
+            startScreenShare();
+        }
 
         // Start sharing your screen with the specified recipient
         function startScreenShare(){
