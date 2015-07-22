@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<!-- saved from url=(0056)http://ktyacke.github.io/respoke-webrtc-preso/video.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!-- Respoke client library -->
+    <script src="./video_files/respoke.min.js"></script><style type="text/css"></style>
+
+    <!-- jQuery, for this example -->
+    <script src="./video_files/jquery-1.11.0.min.js"></script>
+    
+    <!-- Some simple styles to make things perty -->
+    <link rel="stylesheet" type="text/css" href="./video_files/style.css">
+
+
+  <!-- Screensharing head -->    
+
+    <!-- jQuery, note that we are loading over HTTPS from google's CDN -->
+    <script src="./Respoke - Screensharing Example_files/jquery.min.js"></script>
+
+    <!-- Some simple styles to make things perty -->
+    <link rel="stylesheet" type="text/css" href="./Respoke - Screensharing Example_files/style.css">
+
+    <!-- Chrome screensharing extension -->
+    <link rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/lefkijobnhaffcfhfgpkpkpfgcdcfjbc">
+
+    <!-- Some simple styles to make things perty -->
+    <link rel="stylesheet" type="text/css" href="./Respoke - Messaging Example_files/style.css">
+
+</head>
+
+
+
+
+<body>
+    <h3 id="status">Not Connected</h3>
+    <div id="login">
+        <input id="endpoint" placeholder="Username" type="text">
+        <button id="doLogin">Connect</button>
+    </div>
+    
+    <div>
+        <input id="remoteId" placeholder="User to Call" type="text">
+        <button id="doCall">Call</button>
+        <button id="doHangUp">Hang Up</button>
+        <button id="doStartScreenShare">Share Screen</button>
+        <button id="doStopScreenShare">Stop Sharing</button>
+    </div>
+
+    <!-- The person you're calling -->
+    <div id="remoteVideoSource"></div>
+
+    <!-- You -->
+    <div id="localVideoSource"></div>
+
+
+
+<!-- Screensharing -->
+
+    <!-- Video object to attach the stream to -->
+    <video id="localVideoElement"></video>
+    <video id="remoteVideoElement"></video>
+
+
+
+<!-- Messaging -->
+
+    <div id="messaging">
+        <ul id="messages"></ul><br>
+        <input id="remoteId" placeholder="User to Message" type="text"><br>
+        <textarea id="textToSend" placeholder="Message to Send" rows="2"></textarea><br>
+        <button id="sendMessage">Send Message</button>
+    </div>
+
+
+
+
+
+
+    <!-- Video -->
+
+    <script type="text/javascript">
+        // App ID value from the dev portal. You can play
+        // around with the supplied ID or replace it with
+        // your own.
+        var appid = "20b4eacf-77c5-4847-b64b-de346f843431";
+        var activeCall;
+
+        // The ID that other users will identify you by (your username)
+        var endpointId;
+
+        // Create the client object using the App ID 
+        var client = respoke.createClient({
+            appId: appid,
+            developmentMode: true
+        });
+
+        // "connect" event fired after successful connection to Respoke
+        client.listen('connect', function() {
+            $("#status").html("Connected to Respoke as \"" + endpointId + "\"");
+        });
+
+        // Connect to Respoke when the user clicks "connect"
+        $("#doLogin").click(function() {
+            $("#status").html("Connecting...");
+            endpointId = $("#endpoint").val();
+            client.connect({
+                endpointId: endpointId // your username is the endpoint
+            });
+        });
+
+        // The options for our video call including constraints and callbacks
+        var callOptions = {
+            constraints: {audio: true, video: true},
+
+            // Your video
+            onLocalMedia: function(evt) {
+                setVideo('localVideoSource', evt.element)
+            },
+
+            // Their video
+            onConnect: function(evt) {
+                setVideo('remoteVideoSource', evt.element)
+            }
+        };
+        
+        // Listen for incoming calls
+        client.listen('call', function(evt) {
+            activeCall = evt.call;
+
+            // We only want to answer if we didn't initiate the call
+            if(activeCall.caller !== true) {
+                activeCall.answer(callOptions);
+
+                // The hangup event indicates the call is over
+                activeCall.listen('hangup', function () {
+                    hangUp();
+                });
+            }
+        });
+
+        // Call the recipient
+        $("#doCall").click(function() {
+            var recipientId = $("#remoteId").val();
+            var recipientEndpoint = client.getEndpoint({ id: recipientId });
+            activeCall = recipientEndpoint.startVideoCall(callOptions);
+        });
+
+        // Hangup the call
+        $("#doHangUp").click(hangUp);
+
+        // Adds the supplied video element as a child of the supplied element
+        function setVideo(elementId, videoElement) {
+            var videoParent = document.getElementById(elementId);
+            videoParent.innerHTML = "";
+            videoParent.appendChild(videoElement);
+        }
+
+        // End the current call and clean up the DOM
+        function hangUp() {
+            activeCall.hangup();
+            activeCall = null;
+
+            // Remove the video elements
+            $("#localVideoSource").html("");
+            $("#remoteVideoSource").html("");
+        }
+    </script>
+
+
+
+
+<!-- Screensharing -->
+
+    <script type="text/javascript">
+    $(function() {
+
+        // App ID value from the dev portal. You can play
+        // around with the supplied ID or replace it with
+        // your own.
+        var appid = "20b4eacf-77c5-4847-b64b-de346f843431";
+        var activeCall;
+        var endpointId;
+
+        // Create the client object using the App ID 
+        var client = respoke.createClient({
+            appId: appid,
+            developmentMode: true,
+        });
+
+        // "connect" event fired after successful connection to Respoke
+        client.listen('connect', function() {
+            $("#status").html("Connected to Respoke as \"" + endpointId + "\"");
+        });
+
+        // Connect to Respoke when the user clicks "connect"
+        $("#doLogin").click(function() {
+            $("#status").html("Connecting...");
+            endpointId = $("#endpoint").val();
+
+            client.connect({
+                endpointId: endpointId // your username is the endpoint
+            });
+        });
+        
+        // Listen for incoming calls
+        client.listen('call', function(evt) {
+            activeCall = evt.call;
+
+            // We only want to answer if we didn't initiate the call
+            if(activeCall.caller !== true) {
+                var localVideoElement  = document.getElementById('localVideoElement');
+                var remoteVideoElement = document.getElementById('remoteVideoElement');
+
+                activeCall.answer({
+                    videoLocalElement: localVideoElement,
+                    videoRemoteElement: remoteVideoElement
+                });
+
+                // The hangup event indicates the call is over
+                activeCall.listen('hangup', function () {
+                    hangUp();
+                });
+            }
+        });
+
+        // Check if the user has the Chrome Screen Sharing Extension installed
+        $("#doStartScreenShare").click(function() {
+            if (respoke.needsChromeExtension && !respoke.hasChromeExtension) {
+                // Install the extension then start screen sharing
+                startScreenShare();
+            }
+            else
+            {
+                // Extension is already installed, start screen sharing
+                startScreenShare();
+            }
+        });
+
+        function onExtensionInstallSuccess(evt) {
+            startScreenShare();
+        }
+
+        // Start sharing your screen with the specified recipient
+        function startScreenShare(){
+            var recipientId         = $("#remoteId").val();
+            var recipientEndpoint   = client.getEndpoint({ id: recipientId });
+
+            var localVideoElement   = document.getElementById('localVideoElement');
+            var remoteVideoElement  = document.getElementById('remoteVideoElement');
+
+            activeCall = recipientEndpoint.startScreenShare({
+                videoLocalElement: localVideoElement,
+                videoRemoteElement: remoteVideoElement
+            });
+
+            $("#sharing").html("Sharing your screen with \"" + recipientId + "\"");
+        }
+
+        function onExtensionInstallFailure(evt){
+            console.log("There was a problem installing the Chrome Screen Sharing Extension.", evt);
+        }
+
+        // Stop the screen share
+        $("#doStopScreenShare").click(stopScreenShare);
+
+        // Stop the screen share and clean up the DOM
+        function stopScreenShare() {
+            activeCall.hangup();
+            activeCall = null;
+
+            // Remove the video elements
+            $("#localVideoSource").html("");
+            $("#remoteVideoSource").html("");
+        }
+    });
+    </script>
+
+
+
+<!-- Messaging -->
+
+ <script type="text/javascript">
+        // App ID value from the dev portal. You can play
+        // around with the supplied ID but should replace it
+        // with your own.
+        var appid = "20b4eacf-77c5-4847-b64b-de346f843431";
+
+        // The ID that other users will identify you by (your username)
+        var endpointId;
+
+        // Create the client object using the App ID 
+        var client = respoke.createClient({
+            appId: appid,
+            developmentMode: true
+        });
+
+        // "connect" event fired after successful connection to Respoke
+        client.listen('connect', function() {
+            $("#status").html("Connected to Respoke as \"" + endpointId + "\"");
+        });
+
+        // Listen for incoming messages
+        client.listen('message', function(evt) {
+            $("#messages").append(
+                "<li>" + evt.message.message + "</li>"
+            );
+        });
+
+        // Connect to Respoke when the user clicks "connect"
+        $("#doLogin").click(function() {
+            $("#status").html("Connecting...");
+            endpointId = $("#endpoint").val();
+            client.connect({
+                endpointId: endpointId // your username is the endpoint
+            });
+        });
+
+        // Send message
+        $("#sendMessage").click(function() {
+            // Get the recipients name
+            var remote = $("#remoteId").val();
+
+            // Make an endpoint for that recipient
+            var endpoint = client.getEndpoint({
+                id: remote
+            });
+
+            // Grab the text to send
+            var messageText = $("#textToSend").val();
+
+            // Send it
+            endpoint.sendMessage({
+                message: messageText
+            });
+
+            // Show yourself the message
+            $("#messages").append(
+                "<li>" + messageText + "</li>"
+            );
+
+            // Clear the text you just sent
+            $("#textToSend").val('');
+        });
+    </script>
+
+
+
+
+
+
+
+
+
+
+</body></html>
