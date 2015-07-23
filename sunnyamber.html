@@ -19,7 +19,7 @@
     <!-- Some simple styles to make things perty -->
     <link rel="stylesheet" type="text/css" href="./Respoke - Screensharing Example_files/style.css">
 
-    <!-- Chrome screensharing extension -->
+ <!-- Chrome screensharing extension -->
     <link rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/koggclhidlhkfmhkdddkghdcdknajiam">
 
     <!-- Some simple styles to make things perty -->
@@ -226,7 +226,11 @@
         $("#doStartScreenShare").click(function() {
             if (respoke.needsChromeExtension && !respoke.hasChromeExtension) {
                 // Install the extension then start screen sharing
-                startScreenShare();
+                chrome.webstore.install(
+                    "https://chrome.google.com/webstore/detail/koggclhidlhkfmhkdddkghdcdknajiam",
+                    onExtensionInstallSuccess, 
+                    onExtensionInstallFailure
+                );
             }
             else
             {
